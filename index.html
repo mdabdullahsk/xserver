@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IPTU 18+ Premium</title>
+    
+    <!-- External Libraries -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
+
+    <style>
+        :root { --plyr-color-main: #ff0000; --bg: #ffffff; --side: #f1f1f1; --header: #000; --border: #ddd; }
+        .dark-mode { --bg: #121212; --side: #1e1e1e; --header: #000; --border: #333; }
+
+        body { background: var(--bg); color: #000; font-family: 'Segoe UI', Tahoma, sans-serif; transition: 0.3s; margin: 0; overflow: hidden; }
+        .dark-mode { color: #fff; }
+
+        /* Header */
+        header { height: 45px; background: var(--header); color: white; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; position: fixed; top: 0; left: 0; right: 0; z-index: 1000; }
+        .logo span { color: red; font-weight: bold; }
+
+        /* Sidebar 75px */
+        aside { width: 75px; background: var(--side); height: 100vh; position: fixed; top: 45px; left: 0; border-right: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; padding-top: 20px; z-index: 900; }
+        .nav-item { color: inherit; margin-bottom: 30px; cursor: pointer; text-align: center; width: 100%; font-size: 10px; font-weight: bold; opacity: 0.7; }
+        .nav-item i { font-size: 26px; display: block; margin-bottom: 4px; }
+        .nav-item.active { color: red !important; opacity: 1; border-left: 4px solid red; }
+
+        /* Main Content */
+        main { margin-top: 45px; margin-left: 75px; height: calc(100vh - 45px); overflow-y: auto; position: relative; }
+
+        /* Chat Design */
+        .chat-box { padding: 20px; padding-bottom: 120px; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; height: 100%; }
+        .msg { display: flex; gap: 12px; width: 100%; }
+        .msg.me { flex-direction: row-reverse; }
+        .bubble { padding: 12px 18px; border-radius: 15px; background: #d9d9d9; color: #000; max-width: 80%; font-size: 16px; }
+        .avatar { width: 45px; height: 45px; border-radius: 50%; background: #000; color: white; display: flex; align-items: center; justify-content: center; font-size: 28px; flex-shrink: 0; }
+
+        /* Rounded Cards 25px */
+        .v-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; padding: 30px; }
+        .v-card { border: 1px solid #000; border-radius: 25px; overflow: hidden; aspect-ratio: 16/9; position: relative; background: #eee; cursor: pointer; }
+        .v-card img { width: 100%; height: 100%; object-fit: cover; }
+        .p-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.1); }
+        .p-overlay i { font-size: 55px; color: #000; background: #fff; border-radius: 50%; }
+
+        /* Sticky Logic for TV & Player */
+        .sticky-layout { display: flex; height: 100%; overflow: hidden; }
+        .scroll-side { flex: 1; overflow-y: auto; padding: 20px; }
+        .fixed-player { width: 60%; padding: 20px; position: sticky; top: 0; }
+        .plyr-container { border-radius: 25px; overflow: hidden; border: 1px solid #000; background: #000; }
+
+        /* Input area */
+        .input-bar { position: fixed; bottom: 15px; left: 95px; right: 20px; display: flex; align-items: center; gap: 15px; z-index: 1000; }
+        .chat-input { flex: 1; border: 1px solid #000; border-radius: 10px; padding: 12px 15px; outline: none; background: #fff; color: #000; font-size: 16px; }
+
+        /* Progress Bar */
+        #upProgress { position: fixed; bottom: 85px; left: 100px; right: 25px; background: #fff; border: 1px solid #000; padding: 12px; border-radius: 15px; z-index: 2000; display: none; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+
+        @media (max-width: 768px) {
+            aside { display: none; }
+            main { margin-left: 0; }
+            .sticky-layout { flex-direction: column; overflow-y: auto; }
+            .fixed-player { width: 100%; position: relative; }
+            .v-grid { grid-template-columns: 1fr; }
+            .input-bar { left: 10px; }
+        }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">IPTU<span> 18+</span></div>
+        <div class="flex gap-5 items-center">
+            <i class="fas fa-adjust cursor-pointer" onclick="document.body.classList.toggle('dark-mode')"></i>
+            <i class="fas fa-user-circle text-2xl"></i>
+        </div>
+    </header>
+
+    <aside>
+        <div class="nav-item active" id="nav-group" onclick="showPage('group')"><i class="fas fa-users"></i>GROUP</div>
+        <div class="nav-item" id="nav-video" onclick="showPage('video')"><i class="fas fa-video"></i>VIDEO</div>
+        <div class="nav-item" id="nav-iptv" onclick="showPage('iptv')"><i class="fas fa-desktop"></i>IPTV</div>
+    </aside>
+
+    <main id="main">
+        <!-- GROUP PAGE -->
+        <div id="page-group" class="page h-full">
+            <div id="chatBox" class="chat-box"></div>
+            <div class="input-bar">
+                <i class="fas fa-upload text-3xl cursor-pointer" onclick="openUp('cv')"></i>
+                <input type="text" id="chatInput" placeholder="What are you thinking?" class="chat-input">
+                <i class="fas fa-paper-plane text-3xl cursor-pointer" onclick="sendChat()"></i>
+            </div>
+        </div>
+
+        <!-- VIDEO GRID PAGE -->
+        <div id="page-video" class="page hidden">
+            <div class="flex justify-end p-5"><button onclick="openUp('v')" class="border border-black px-5 py-2 rounded-xl font-bold text-sm bg-gray-200 shadow-sm"><i class="fas fa-plus"></i> Upload Vide Free</button></div>
+            <div class="v-grid" id="videoGrid"></div>
+        </div>
+
+        <!-- IPTV PAGE -->
+        <div id="page-iptv" class="page hidden h-full">
+            <div class="sticky-layout">
+                <div class="scroll-side space-y-3" id="tvChanList"></div>
+                <div class="fixed-player">
+                    <div class="plyr-container relative">
+                        <div id="tv-overlay" class="absolute inset-0 z-50 bg-black/60 flex flex-col items-center justify-center cursor-pointer" onclick="unmuteTV()">
+                            <i class="fas fa-play-circle text-7xl text-red-600 mb-2"></i>
+                            <p class="text-white font-bold uppercase text-xs">Unmute & Play</p>
+                        </div>
+                        <video id="tvPlayer" playsinline muted></video>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PLAYER PAGE (MOVIE) -->
+        <div id="page-player" class="page hidden h-full">
+            <div class="sticky-layout">
+                <div class="fixed-player">
+                    <div class="plyr-container"><video id="moviePlayer" playsinline controls></video></div>
+                    <h2 id="pTitle" class="mt-5 text-2xl font-bold"></h2>
+                </div>
+                <div class="scroll-side space-y-4" id="sideVideoList"></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Global Progress Bar -->
+    <div id="upProgress">
+        <div class="flex justify-between text-xs font-bold mb-2 text-black"><span id="progTitle">Uploading...</span><span id="progPercent">0%</span></div>
+        <div class="w-full bg-gray-200 h-2 rounded-full overflow-hidden"><div id="progFill" class="bg-red-600 h-full w-0 transition-all"></div></div>
+    </div>
+
+    <!-- Upload Modal -->
+    <div id="upModal" class="hidden fixed inset-0 bg-black/60 z-[3000] flex items-center justify-center p-4">
+        <div class="bg-white p-8 rounded-3xl w-full max-w-sm">
+            <h2 class="font-bold mb-4 text-black">New Upload</h2>
+            <input type="text" id="vTitle" placeholder="Title" class="w-full border p-3 mb-4 rounded-xl text-black">
+            <input type="file" id="vFile" accept="video/*" class="mb-4 w-full text-black text-sm">
+            <div class="flex gap-2">
+                <button onclick="startUpload()" class="flex-1 bg-black text-white py-3 rounded-xl font-bold">UPLOAD</button>
+                <button onclick="document.getElementById('upModal').classList.add('hidden')" class="px-5 bg-gray-200 rounded-xl text-black">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <video id="captureVid" class="hidden" muted></video>
+
+    <script>
+        const CONFIG = {
+            BOT_TOKEN: "MTQ5OTIzMzYzMTI4ODE2NDU0Mw.G4xNfK._ba0qtWliDH2tYtcbsNbluewOQvK-bfkMPezbw",
+            VIDEO_CH: "1499231210637885532",
+            CHAT_CH: "1499736419005104209",
+            VIDEO_WEBHOOK: "https://discord.com/api/webhooks/1499399399803977819/vhb0UM8RDh29pWvCVRd37kZtMeVyA1h1bMaal_EPhTHXd59thPhvjPZhVc7ssAjRZOCa",
+            CHAT_WEBHOOK: "https://discord.com/api/webhooks/1499737735056064562/C8GOqxReSIwFfyP7SEUSDmigSLcp1RZva7-Qio7BZuK1qMkBsHnysfBtcpUsr4eLOwi0",
+            AD_URL: "https://www.profitablecpmratenetwork.com/cbsi3mi3uj?key=1be8ee13190cf600d57199c406156626"
+        };
+
+        const TV_LIST = [
+            {name:"Babes", url:"https://cdn4.skygo.mn/live/disk1/Babes/HLSv3-FTA/Babes.m3u8"},
+            {name:"Eroxxx", url:"https://webtvstream.bhtelecom.ba/eroxxx.m3u8"},
+            {name:"Asian", url:"https://live.redtraffic.net/asian.m3u8"},
+            {name:"Russian", url:"https://live.redtraffic.net/russian.m3u8"},
+            {name:"Milf", url:"https://live.redtraffic.net/milf.m3u8"}
+        ];
+
+        const mPlayer = new Plyr('#moviePlayer');
+        const tvPlayerElem = document.getElementById('tvPlayer');
+        let tvPlayer, hls, upType = 'v', currentTV = "";
+
+        window.onload = () => { loadChat(true); loadVideos(); setupTV(); setInterval(() => loadChat(false), 8000); };
+
+        function showPage(id) {
+            mPlayer.pause();
+            if(tvPlayer) tvPlayer.pause();
+            document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+            document.getElementById('page-' + id).classList.remove('hidden');
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            const n = document.getElementById('nav-' + (id==='player'?'video':id));
+            if(n) n.classList.add('active');
+            if(id === 'group') scrollToBottom();
+        }
+
+        function setupTV() {
+            document.getElementById('tvChanList').innerHTML = TV_LIST.map(c => `
+                <div class="p-4 bg-gray-200 rounded-2xl flex items-center gap-4 cursor-pointer border border-gray-300" onclick="playTV('${c.url}')">
+                    <img src="https://img.icons8.com/ios-filled/50/ff0000/tv-show.png" class="w-10">
+                    <span class="font-bold uppercase">${c.name}</span>
+                </div>`).join('');
+            playTV(TV_LIST[0].url);
+        }
+
+        function playTV(url) {
+            currentTV = url;
+            document.getElementById('tv-overlay').classList.remove('hidden');
+        }
+
+        function unmuteTV() {
+            window.open(CONFIG.AD_URL, '_blank');
+            document.getElementById('tv-overlay').classList.add('hidden');
+            if(!tvPlayer) tvPlayer = new Plyr(tvPlayerElem, {controls:['play','progress','mute','volume','fullscreen']});
+            if(Hls.isSupported()){ if(hls)hls.destroy(); hls=new Hls(); hls.loadSource(currentTV); hls.attachMedia(tvPlayerElem); hls.on(Hls.Events.MANIFEST_PARSED,()=>tvPlayerElem.play()); }
+            else { tvPlayerElem.src=currentTV; tvPlayerElem.play(); }
+            tvPlayerElem.muted = false;
+        }
+
+        async function loadChat(scroll) {
+            const res = await fetch(`https://discord.com/api/v10/channels/${CONFIG.CHAT_CH}/messages?limit=50`, {headers:{"Authorization":`Bot ${CONFIG.BOT_TOKEN}`}});
+            const msgs = await res.json();
+            const media = {};
+            msgs.forEach(m => m.attachments?.forEach(a => {
+                const p = a.filename.split('__');
+                if(p.length>=3 && p[2]==='t') media[p[1]] = a.url;
+            }));
+            const box = document.getElementById('chatBox');
+            box.innerHTML = msgs.reverse().map(m => {
+                const isMe = m.author.username === "mdabdullahsheikh017";
+                let content = `<div class="bubble">${m.content||""}</div>`;
+                if(m.attachments?.length>0){
+                    const p = m.attachments[0].filename.split('__');
+                    if(p.length>=3 && p[2]==='cv'){
+                        content = `<div class="v-card w-72" onclick="playSingle('${m.attachments[0].url}')"><img src="${media[p[1]]||''}"><div class="p-overlay"><i class="fas fa-play-circle"></i></div></div>`;
+                    } else if(p[2]==='t') return '';
+                }
+                return `<div class="msg ${isMe?'me':''}"><div class="avatar"><i class="fas fa-user-circle"></i></div>${content}</div>`;
+            }).join('');
+            if(scroll) scrollToBottom();
+        }
+
+        async function loadVideos() {
+            const res1 = await fetch(`https://discord.com/api/v10/channels/${CONFIG.VIDEO_CH}/messages?limit=100`, {headers:{"Authorization":`Bot ${CONFIG.BOT_TOKEN}`}});
+            const res2 = await fetch(`https://discord.com/api/v10/channels/${CONFIG.CHAT_CH}/messages?limit=100`, {headers:{"Authorization":`Bot ${CONFIG.BOT_TOKEN}`}});
+            const all = [...await res1.json(), ...await res2.json()];
+            const movies = {};
+            all.forEach(m => m.attachments?.forEach(a => {
+                const p = a.filename.split('__');
+                if(p.length>=3){
+                    if(!movies[p[1]]) movies[p[1]] = {t:p[0].replace(/_/g,' '), poster:'', parts:[]};
+                    if(p[2]==='t') movies[p[1]].poster = a.url;
+                    else movies[p[1]].parts.push({url:a.url, n:parseInt(p[3])});
+                }
+            }));
+            const html = Object.values(movies).map(m => `
+                <div class="v-card shadow-lg" onclick='openMovie("${m.t}", ${JSON.stringify(m.parts)}, "${m.poster}")'>
+                    <img src="${m.poster}"><div class="p-overlay"><i class="fas fa-play-circle"></i></div>
+                </div>`).join('');
+            document.getElementById('videoGrid').innerHTML = html;
+            document.getElementById('sideVideoList').innerHTML = html;
+        }
+
+        async function startUpload() {
+            const title = document.getElementById('vTitle').value.replace(/\s/g,'_');
+            const file = document.getElementById('vFile').files[0];
+            if(!title || !file) return;
+            document.getElementById('upModal').classList.add('hidden');
+            const prog = document.getElementById('upProgress'); prog.style.display = 'block';
+            const uid = Date.now();
+            const thumb = await getThumb(file);
+            const webhook = (upType==='cv') ? CONFIG.CHAT_WEBHOOK : CONFIG.VIDEO_WEBHOOK;
+
+            const tf = new FormData(); tf.append("file", thumb, `${title}__${uid}__t__0.jpg`);
+            await fetch(webhook, {method:"POST", body:tf});
+
+            const CHUNK = 7 * 1024 * 1024;
+            const total = Math.ceil(file.size / CHUNK);
+            for(let p=1, s=0; s<file.size; s+=CHUNK, p++){
+                const pct = Math.round((p/total)*100);
+                document.getElementById('progFill').style.width = pct+'%';
+                document.getElementById('progPercent').innerText = pct+'%';
+                const vf = new FormData(); vf.append("file", file.slice(s,s+CHUNK), `${title}__${uid}__${upType}__${p}.mp4`);
+                await fetch(webhook, {method:"POST", body:vf});
+            }
+            location.reload();
+        }
+
+        async function getThumb(file) { return new Promise(r => { const v=document.getElementById('captureVid'); v.src=URL.createObjectURL(file); v.currentTime=3; v.onseeked=()=>{ const c=document.createElement('canvas'); c.width=640; c.height=360; c.getContext('2d').drawImage(v,0,0,640,360); c.toBlob(b=>r(b),'image/jpeg',0.8); }; }); }
+        function openMovie(t, parts, p) { showPage('player'); document.getElementById('pTitle').innerText = t; parts.sort((a,b)=>a.n-b.n); mPlayer.source = {type:'video', sources:[{src:parts[0].url, type:'video/mp4'}], poster:p}; mPlayer.play(); }
+        function playSingle(u) { showPage('player'); mPlayer.source = {type:'video', sources:[{src:u, type:'video/mp4'}]}; mPlayer.play(); }
+        function openUp(t) { upType = t; document.getElementById('upModal').classList.remove('hidden'); }
+        function scrollToBottom() { const b = document.getElementById('chatBox'); b.scrollTop = b.scrollHeight; }
+        async function sendChat() { const inp=document.getElementById('chatInput'); if(!inp.value) return; const txt=inp.value; inp.value=""; await fetch(CONFIG.CHAT_WEBHOOK,{method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({content:txt, username:"mdabdullahsheikh017"})}); loadChat(true); }
+    </script>
+</body>
+</html>
